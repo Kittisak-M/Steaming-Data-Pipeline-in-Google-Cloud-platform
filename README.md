@@ -1,87 +1,70 @@
-# 🛒 TrendMart E-Commerce Data Platform (GCP Practice Project)
+# 👗 Streaming Data Pipeline in Google Cloud Platform
 
-## 📌 Overview
-This project simulates a real-world data engineering scenario for an e-commerce company, **TrendMart**, aiming to build a modern analytics platform on **Google Cloud Platform (GCP)**. It covers ingestion, processing, storage, and visualization using GCP-native tools.
+## 📌 Business Purpose
+
+Fastyle is a rapidly expanding fast-fashion company with **20 branches nationwide**. As the business grows, efficiently managing inventory and analyzing sales data is critical for sustainable growth and profitability. Fastyle also plans to expand into online sales, making centralized and accessible data even more essential.
+
+Currently, data is scattered across systems, making it hard for the data team to extract insights. This project aims to build a **scalable, real-time data engineering pipeline** to support business growth and improve data accessibility.
+
+### ✅ Project Scope Includes:
+- ETL/ELT pipeline development  
+- Cost estimation and cloud optimization  
+- Real-time streaming architecture  
+- Creation of a data mart for reporting
+- Deploy API
+---
+
+## 🗂️ Data Sources
+(*To be defined – e.g., POS systems, inventory databases, e-commerce platforms.*)
 
 ---
 
-## 🎯 Business Objective
-TrendMart wants to centralize its data to enable:
+## 🧰 Data Stack
 
-- Real-time and batch analytics
-- Customer 360° views
-- Daily sales & marketing performance dashboards
-- Real-time product trend monitoring
-
----
-
-## 📂 Data Sources
-
-| Source                   | Type       | Description                                      | Frequency  |
-|--------------------------|------------|--------------------------------------------------|------------|
-| Website Clickstream      | Streaming  | Page views, add-to-cart, purchases               | Real-time  |
-| Sales Transactions       | Batch      | Orders from country-specific databases           | Daily      |
-| Marketing Campaigns      | Batch (CSV)| Data from Meta Ads & Google Ads                  | Daily      |
-| Customer Support Tickets | API        | Tickets from Zendesk                             | Hourly     |
+- **Pub/Sub** – Real-time data ingestion (e.g., sales transactions, inventory changes)  
+- **Cloud Storage** – Raw data lake storage  
+- **Cloud Composer (Apache Airflow)** – Orchestration of ETL pipelines
+- **Cloud SQL**
+- **BigQuery** – Scalable data warehouse for analytics and reporting  
 
 ---
 
-## 🧰 Tools & Technologies (GCP)
+## 🎯 Business Goals
 
-| Layer             | Tool                  |
-|-------------------|------------------------|
-| Ingestion         | Pub/Sub, Cloud Storage, Cloud Functions |
-| Processing        | Dataflow (Apache Beam), Dataproc (Spark) |
-| Storage (Raw)     | Cloud Storage         |
-| Warehouse         | BigQuery              |
-| Orchestration     | Cloud Composer (Airflow) |
-| Visualization     | Looker / Looker Studio |
-| Access Control    | IAM                    |
+### 1. Inventory Management Optimization  
+- Implement a reliable streaming pipeline to track inventory across the central warehouse and 20 retail branches  
+- Enable real-time inventory visibility to prevent stockouts and overstock situations  
+- Improve supply chain efficiency and customer satisfaction
 
----
+### 2. Sales Performance Reporting  
+- Build data models to calculate **Gross Merchandise Value (GMV)** segmented by:
+  - Customer type (e.g., new vs. returning)  
+  - Product category (e.g., tops, bottoms, accessories)  
+- Provide marketing and sales teams with insights for targeted campaigns and product strategies
 
-## 🛠 Functional Requirements
-
-- Ingest real-time website event data via **Pub/Sub**.
-- Load daily batch CSV files from marketing and sales to **Cloud Storage**.
-- Use **Cloud Functions** to trigger ETL jobs upon file arrival.
-- Use **Dataflow or Dataproc** for data cleaning and transformation.
-- Load cleaned data into **BigQuery** as the central data warehouse.
-- Schedule pipelines with **Cloud Composer (Airflow)**.
-- Visualize KPIs with **Looker Studio** or **Looker**.
+### 3. Profitability Analysis  
+- Generate reports showing **gross profit margin by product category**  
+- Support data-driven decisions in pricing, promotions, and inventory planning  
+- Maximize business profitability using reliable metrics
 
 ---
 
-## 🎯 Key KPIs & Outputs
+## 🚀 Outcome
 
-- 📈 Sales trends (daily/weekly/monthly)
-- 💰 Conversion rates by channel
-- 👤 Customer retention & lifetime value
-- 🔝 Top-selling products
-- 🚨 Real-time alerts for product view/sales spikes
-- 📊 Data APIs for internal use
+A cloud-native, cost-optimized, and scalable data pipeline that supports real-time analytics, inventory visibility, and business intelligence reporting.
 
 ---
 
-## 🔒 Data Governance
+## 📅 Next Steps
 
-- Store **raw data** for 1 year (cold storage).
-- Store **processed data** for 6 months (hot storage).
-- **Mask PII** such as customer emails and phone numbers.
-- Apply **role-based access control** via IAM.
-
----
-
-## 📌 Your Practice Tasks
-
-1. **Design a GCP Architecture Diagram**
-2. **Mock data pipeline**:
-   - CSV → Cloud Storage → Dataflow → BigQuery
-3. **Write SQL queries** in BigQuery for KPI reporting
-4. (Optional) Deploy **Airflow DAG** in Cloud Composer
-5. (Optional) Build dashboards in Looker Studio
+- [ ] Define and integrate data sources  
+- [ ] Set up Pub/Sub topics for streaming ingestion  
+- [ ] Design data models in BigQuery  
+- [ ] Schedule Airflow DAGs for transformation workflows  
+- [ ] Build dashboards for inventory and sales reporting  
 
 ---
 
-## 📁 Project Structure (Suggested)
+## 📫 Contact
 
+For more details, feel free to reach out at [your-email@example.com]
