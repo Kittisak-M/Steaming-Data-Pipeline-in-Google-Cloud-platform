@@ -15,7 +15,7 @@ Currently, data is scattered across systems, making it hard for the data team to
 ---
 
 ## 🗂️ Data Sources
-(*To be defined – e.g., POS systems, inventory databases, e-commerce platforms.*)
+- POS system API (using Cloud function to create steamming data)
 
 ---
 
@@ -65,6 +65,3 @@ A cloud-native, cost-optimized, and scalable data pipeline that supports real-ti
 
 ---
 
-## 📫 Contact
-
-For more details, feel free to reach out at [your-email@example.com]
