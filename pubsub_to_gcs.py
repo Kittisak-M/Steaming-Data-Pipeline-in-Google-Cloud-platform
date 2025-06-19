@@ -1,10 +1,9 @@
 import apache_beam as beam
-from apache_beam.options.pipeline_options import PipelineOptions
+from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions, StandardOptions
 import json
 import logging
-from apache_beam.transforms.window import FixedWindows
-from apache_beam.transforms.trigger import AfterCount, Repeatedly, AccumulationMode
 import datetime
+
 
 class ParseJson(beam.DoFn):
     def process(self, element):
@@ -14,44 +13,44 @@ class ParseJson(beam.DoFn):
         except Exception as e:
             logging.error(f"Failed to parse JSON: {e}")
 
+
 job_name = 'pubsub-to-gcs-json-' + datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
 pipeline_options = PipelineOptions(
-    streaming=True,
     runner='DataflowRunner',
     project='inspired-parsec-461804-f9',
     region='asia-east1',
     temp_location='gs://fast-fashion/temp',
     staging_location='gs://fast-fashion/streaming-sales-data',
-    job_name=job_name
+    job_name=job_name,
 )
+
+# ✅ Set streaming mode in code
+pipeline_options.view_as(StandardOptions).streaming = True
+pipeline_options.view_as(SetupOptions).save_main_session = True
 
 with beam.Pipeline(options=pipeline_options) as pipeline:
     (
         pipeline
         | "Read from Pub/Sub" >> beam.io.ReadFromPubSub(
             topic='projects/inspired-parsec-461804-f9/topics/data-demo'
-        )
-        | "Window into 1-min fixed windows" >> beam.WindowInto(
-            FixedWindows(60),
-            trigger=Repeatedly(AfterCount(1)),
-            accumulation_mode=AccumulationMode.DISCARDING
-        )
+        ).with_output_types(bytes)
+
         | "Parse JSON" >> beam.ParDo(ParseJson())
+
         | "Convert to JSON lines" >> beam.Map(json.dumps)
 
-        # ADD KEY to enable windowed write
-        | "Add dummy key" >> beam.Map(lambda x: (None, x))
+        # ✅ Add dummy key to prepare for grouped write
+        | "Attach dummy key" >> beam.Map(lambda x: (None, x))
 
-        # Group by key and window
+        # ✅ Group by key (required in streaming write)
         | "Group by key" >> beam.GroupByKey()
 
-        # Format output
+        # ✅ Flatten for output
         | "Flatten values" >> beam.FlatMap(lambda kv: kv[1])
 
-        # Write to GCS
         | "Write to GCS" >> beam.io.WriteToText(
-            'gs://fast-fashion/streaming-sales-data/output',
+            'gs://fast-fashion/streaming-sales-data/output/data',
             file_name_suffix='.json',
             shard_name_template='-SS-of-NN'
         )
