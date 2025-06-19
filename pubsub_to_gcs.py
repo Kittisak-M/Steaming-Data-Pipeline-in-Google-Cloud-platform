@@ -39,9 +39,20 @@ with beam.Pipeline(options=pipeline_options) as pipeline:
         )
         | "Parse JSON" >> beam.ParDo(ParseJson())
         | "Convert to JSON lines" >> beam.Map(json.dumps)
+
+        # ADD KEY to enable windowed write
+        | "Add dummy key" >> beam.Map(lambda x: (None, x))
+
+        # Group by key and window
+        | "Group by key" >> beam.GroupByKey()
+
+        # Format output
+        | "Flatten values" >> beam.FlatMap(lambda kv: kv[1])
+
+        # Write to GCS
         | "Write to GCS" >> beam.io.WriteToText(
             'gs://fast-fashion/streaming-sales-data/output',
             file_name_suffix='.json',
-            shard_name_template='-SS-of-NN'  # Allow Beam to shard dynamically
+            shard_name_template='-SS-of-NN'
         )
     )
