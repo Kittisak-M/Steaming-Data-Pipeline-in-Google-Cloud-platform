@@ -3,7 +3,7 @@ from apache_beam.options.pipeline_options import PipelineOptions
 import json
 import logging
 from apache_beam.transforms.window import FixedWindows
-from apache_beam.transforms.trigger import AfterProcessingTime, AccumulationMode, AfterCount, Repeatedly
+from apache_beam.transforms.trigger import AfterCount, Repeatedly, AccumulationMode
 import datetime
 
 class ParseJson(beam.DoFn):
@@ -29,20 +29,19 @@ pipeline_options = PipelineOptions(
 with beam.Pipeline(options=pipeline_options) as pipeline:
     (
         pipeline
-        | "Read data from Pub/Sub" >> beam.io.ReadFromPubSub(
+        | "Read from Pub/Sub" >> beam.io.ReadFromPubSub(
             topic='projects/inspired-parsec-461804-f9/topics/data-demo'
         )
-        | "Window & Trigger" >> beam.WindowInto(
+        | "Window into 1-min fixed windows" >> beam.WindowInto(
             FixedWindows(60),
             trigger=Repeatedly(AfterCount(1)),
             accumulation_mode=AccumulationMode.DISCARDING
         )
         | "Parse JSON" >> beam.ParDo(ParseJson())
-        | "Convert to JSON lines" >> beam.Map(lambda x: json.dumps(x))
+        | "Convert to JSON lines" >> beam.Map(json.dumps)
         | "Write to GCS" >> beam.io.WriteToText(
             'gs://fast-fashion/streaming-sales-data/output',
             file_name_suffix='.json',
-            shard_name_template='',
-            num_shards=1
+            shard_name_template='-SS-of-NN'  # Allow Beam to shard dynamically
         )
     )
