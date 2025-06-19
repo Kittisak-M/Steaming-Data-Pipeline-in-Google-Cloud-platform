@@ -1,0 +1,36 @@
+name: Deploy Apache Beam to Dataflow
+
+on:
+  push:
+    branches:
+      - main 
+      
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Apache Beam with GCP extras
+        run: pip install apache-beam[gcp]
+
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Run Apache Beam Dataflow job
+        run: |
+          python pubsub_to_gcs.py \
+            --runner=DataflowRunner \
+            --project=inspired-parsec-461804-f9 \
+            --region=asia-east1 \
+            --temp_location=gs://fast-fashion/temp \
+            --staging_location=gs://fast-fashion/staging \
+            --job_name=auto-deploy-$(date +%Y%m%d%H%M%S)
