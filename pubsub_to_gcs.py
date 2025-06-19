@@ -3,6 +3,8 @@ from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions, 
 import json
 import logging
 import datetime
+from apache_beam.transforms.window import FixedWindows
+from apache_beam.transforms.trigger import AfterProcessingTime, AccumulationMode, Repeatedly
 
 
 class ParseJson(beam.DoFn):
@@ -20,8 +22,8 @@ pipeline_options = PipelineOptions(
     runner='DataflowRunner',
     project='inspired-parsec-461804-f9',
     region='asia-east1',
-    temp_location='gs://fast-fashion/temp',
-    staging_location='gs://fast-fashion/streaming-sales-data',
+    temp_location='gs://fast-fashion/streaming-sales-data/temp',
+    staging_location='gs://fast-fashion/streaming-sales-data/staging-area',
     job_name=job_name,
 )
 
@@ -42,6 +44,12 @@ with beam.Pipeline(options=pipeline_options) as pipeline:
 
         # ✅ Add dummy key to prepare for grouped write
         | "Attach dummy key" >> beam.Map(lambda x: (None, x))
+
+        | "Window into fixed intervals" >> beam.WindowInto(
+            FixedWindows(60),
+            trigger=Repeatedly(AfterProcessingTime(60)),
+            accumulation_mode=AccumulationMode.DISCARDING
+        )
 
         # ✅ Group by key (required in streaming write)
         | "Group by key" >> beam.GroupByKey()
