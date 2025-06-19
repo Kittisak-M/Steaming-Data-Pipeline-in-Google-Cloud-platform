@@ -1,65 +1,38 @@
 import apache_beam as beam
-from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions, StandardOptions
-import json
-import logging
+from apache_beam.options.pipeline_options import PipelineOptions
+import random
 import datetime
-from apache_beam.transforms.window import FixedWindows
-from apache_beam.transforms.trigger import AfterProcessingTime, AccumulationMode, Repeatedly
 
-
-class ParseJson(beam.DoFn):
+class GenerateRandomSalesData(beam.DoFn):
     def process(self, element):
-        try:
-            record = json.loads(element.decode('utf-8'))
-            yield record
-        except Exception as e:
-            logging.error(f"Failed to parse JSON: {e}")
-
-
-job_name = 'pubsub-to-gcs-json-' + datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        # Generate one random sales record as CSV line
+        order_id = random.randint(1000, 9999)
+        customer_id = random.randint(10000, 99999)
+        branch_id = random.randint(1, 5)
+        order_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        sales_channel = random.choice(['online', 'offline'])
+        total_amount = round(random.uniform(10.0, 5000.0), 2)
+        # CSV format: order_id,customer_id,branch_id,order_date,sales_channel,total_amount
+        csv_line = f"{order_id},{customer_id},{branch_id},{order_date},{sales_channel},{total_amount}"
+        yield csv_line
 
 pipeline_options = PipelineOptions(
-    runner='DataflowRunner',
+    runner='DataflowRunner',  # or DirectRunner for local testing
     project='inspired-parsec-461804-f9',
     region='asia-east1',
-    temp_location='gs://fast-fashion/streaming-sales-data/temp',
-    staging_location='gs://fast-fashion/streaming-sales-data/staging-area',
-    job_name=job_name,
+    temp_location='gs://fast-fashion/temp',
+    staging_location='gs://fast-fashion/streaming-sales-data',
+    job_name='random-sales-csv-' + datetime.datetime.now().strftime('%Y%m%d%H%M%S'),
 )
 
-# ✅ Set streaming mode in code
-pipeline_options.view_as(StandardOptions).streaming = True
-pipeline_options.view_as(SetupOptions).save_main_session = True
-
-with beam.Pipeline(options=pipeline_options) as pipeline:
+with beam.Pipeline(options=pipeline_options) as p:
     (
-        pipeline
-        | "Read from Pub/Sub" >> beam.io.ReadFromPubSub(
-            topic='projects/inspired-parsec-461804-f9/topics/data-demo'
-        ).with_output_types(bytes)
-
-        | "Parse JSON" >> beam.ParDo(ParseJson())
-
-        | "Convert to JSON lines" >> beam.Map(json.dumps)
-
-        # ✅ Add dummy key to prepare for grouped write
-        | "Attach dummy key" >> beam.Map(lambda x: (None, x))
-
-        | "Window into fixed intervals" >> beam.WindowInto(
-            FixedWindows(60),
-            trigger=Repeatedly(AfterProcessingTime(60)),
-            accumulation_mode=AccumulationMode.DISCARDING
-        )
-
-        # ✅ Group by key (required in streaming write)
-        | "Group by key" >> beam.GroupByKey()
-
-        # ✅ Flatten for output
-        | "Flatten values" >> beam.FlatMap(lambda kv: kv[1])
-
-        | "Write to GCS" >> beam.io.WriteToText(
-            'gs://fast-fashion/streaming-sales-data/output/data',
-            file_name_suffix='.json',
+        p
+        | "Create seed" >> beam.Create([None] * 100)  # Generate 100 random records
+        | "Generate random sales data" >> beam.ParDo(GenerateRandomSalesData())
+        | "Write to GCS as CSV" >> beam.io.WriteToText(
+            'gs://fast-fashion/streaming-sales-data/temp/random_sales',
+            file_name_suffix='.csv',
             shard_name_template='-SS-of-NN'
         )
     )
